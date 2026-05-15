@@ -47,10 +47,17 @@ export default {
       return e.toLowerCase().split(' ').join('_')
     },
     downloadDocument() {
-      saveAs(
-        window.URL.createObjectURL(this.media.file),
-        `${this.media.title}.pdf`
-      )
+      if (this.media.file) {
+        saveAs(
+          window.URL.createObjectURL(this.media.file),
+          `${this.media.title}.pdf`
+        )
+        return
+      }
+
+      if (this.media.dataURI) {
+        saveAs(this.media.dataURI, `${this.media.title}.pdf`)
+      }
     },
   },
 }

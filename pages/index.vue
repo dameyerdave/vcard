@@ -63,8 +63,9 @@
         :footerCredit="footerCredit"
         :showAlert="showAlert"
         :hasLightBG="hasLightBG"
-        :downloadKey="downloadKey"
-        :pubKeyIsValid="pubKeyIsValid"
+        :shareEnabled="Boolean(hostedURL)"
+        :shareUrl="hostedURL"
+        :hostedView="true"
       />
     </transition>
 
@@ -73,118 +74,51 @@
         <div
           class="logo w-24"
           v-html="require(`~/assets/icons/logo.svg?include`)"
-          title="EnBizCard - An Open-Source Digital Business Card Generator"
+          title="Xuno vCard Generator"
         ></div>
-        <a
+        <div
           class="
-            font-extrabold
-            tracking-wide
-            leading-none
+            text-right
             shrink-0
             p-3
             border-2
             text-white
             border-gray-700
             rounded
-            hover:bg-gray-700
-            focus:bg-gray-700
-            transition-colors
-            duration-200
           "
-          href="https://www.vishnuraghav.com/donate"
-          target="_blank"
-          rel="noreferrer"
-          >Donate</a
         >
+          <p class="text-xs uppercase tracking-widest text-gray-400">
+            Signed in as
+          </p>
+          <p class="mt-1 font-extrabold break-all">
+            {{ authUser ? authUser.email : 'Not signed in' }}
+          </p>
+          <a
+            v-if="authUser"
+            href="/cdn-cgi/access/logout"
+            class="mt-2 inline-block text-xs font-extrabold uppercase tracking-widest text-gray-400 transition-colors duration-200 hover:text-white focus:text-white"
+          >
+            Logout
+          </a>
+        </div>
       </div>
-      <h1
-        class="
-          text-3xl
-          md:text-5xl
-          font-extrabold
-          mt-24
-          md:mt-48 md:leading-tight
-        "
-      >
-        Why Pay When Your Website Can Host Your Digital Business Cards for Free!
-      </h1>
-      <p class="mt-8 text-lg md:text-xl w-full md:w-3/4 text-gray-200">
-        EnBizCard helps you create beautiful, responsive HTML&#8209;based
-        digital business cards that can be hosted on your website.
-      </p>
-      <ul class="mt-4 text-gray-400">
-        <li>-&ensp;No sign-up required</li>
-        <li>-&ensp;100% free and open-source</li>
-        <li>-&ensp;No user tracking and data collection</li>
-        <li>-&ensp;Works offline</li>
-      </ul>
-      <div class="mt-4 flex flex-wrap items-center">
-        <button
-          class="
-            font-extrabold
-            leading-none
-            text-lg
-            tracking-wide
-            select-none
-            shrink-0
-            p-5
-            mt-2
-            mr-2
-            text-white
-            bg-emerald-600
-            rounded
-            hover:bg-emerald-500
-            focus:bg-emerald-500
-            transition-colors
-            duration-200
-            focus:outline-none
-          "
-          @click="create()"
-        >
-          Create your own
-        </button>
-        <a
-          class="
-            font-extrabold
-            leading-none
-            text-lg
-            tracking-wide
-            shrink-0
-            p-5
-            mt-2
-            text-white
-            bg-gray-700
-            rounded
-            hover:bg-gray-600
-            focus:bg-gray-600
-            transition-colors
-            duration-200
-          "
-          href="/demo"
-          target="_blank"
-          >View demo</a
-        >
-      </div>
-      <p class="mt-6">
-        Read the
-        <NuxtLink
-          to="/hosting-guide"
-          class="
-            cursor-pointer
-            underline
-            font-extrabold
-            text-emerald-600
-            hover:text-emerald-500
-            focus:text-emerald-500
-            transition-colors
-            duration-200
-          "
-          >Hosting Guide</NuxtLink
-        >
-      </p>
+    </div>
+    <div class="px-4 mt-10">
+      <Download
+        mode="cards"
+        :publishCard="publishCard"
+        :publishBusy="publishBusy"
+        :publishLabel="publishLabel"
+        :authUser="authUser"
+        :userCards="userCards"
+        :cardsLoading="cardsLoading"
+        :copyCardLink="copyCardLink"
+        :loadCard="loadCard"
+        :deleteCard="deleteCard"
+      />
     </div>
     <div class="md:grid md:grid-cols-2">
-      <div class="px-4 mt-32">
+      <div class="px-4 mt-12">
         <div ref="create" id="step-1" class="pt-8">
           <h2 class="font-extrabold text-2xl">Header attachments</h2>
           <div class="stepC">
@@ -344,87 +278,127 @@
             />
           </div>
           <div class="stepC mt-6">
-            <label for="business-address" class="ml-4">Business address</label>
-            <textarea
-              id="business-address"
-              :value="genInfo.addr"
-              @input="genInfo.addr = $event.target.value"
-              class="
-                block
-                mt-2
-                px-4
-                py-3
-                w-full
-                bg-black
-                rounded
-                border border-transparent
-                transition-colors
-                duration-200
-                focus:outline-none focus:border-gray-600
-                resize-none
-                hover:border-gray-600
-              "
-              rows="4"
-            ></textarea>
-          </div>
-          <div class="stepC mt-6">
-            <label for="business-description" class="ml-4"
-              >Business description
-            </label>
-            <textarea
-              id="business-description"
-              :value="genInfo.desc"
-              @input="genInfo.desc = $event.target.value"
-              class="
-                block
-                mt-2
-                px-4
-                py-3
-                w-full
-                bg-black
-                rounded
-                border border-transparent
-                transition-colors
-                duration-200
-                focus:outline-none focus:border-gray-600
-                resize-none
-                hover:border-gray-600
-              "
-              rows="4"
-            ></textarea>
-          </div>
-          <div class="stepC relative mt-6">
-            <label for="pgp-public-key" class="flex justify-between ml-4"
-              >OpenPGP public key<span
-                v-if="genInfo.key"
-                class="mr-4"
-                :class="pubKeyIsValid ? 'text-emerald-500' : 'text-red-600'"
-                >{{ pubKeyIsValid ? 'Valid' : 'Invalid schema' }}</span
-              >
-            </label>
-            <textarea
-              id="pgp-public-key"
-              v-model="genInfo.key"
-              class="
-                block
-                mt-2
-                px-4
-                py-3
-                w-full
-                bg-black
-                placeholder-gray-600
-                rounded
-                border border-transparent
-                transition-colors
-                duration-200
-                focus:outline-none focus:border-gray-600
-                resize-none
-                hover:border-gray-600
-              "
-              rows="4"
-              spellcheck="false"
-              placeholder="Paste public key block here"
-            ></textarea>
+            <p class="ml-4">Business address</p>
+            <div class="mt-2 grid grid-cols-3 gap-4">
+              <div class="col-span-2">
+                <label for="business-street" class="sr-only">Street</label>
+                <input
+                  id="business-street"
+                  spellcheck="false"
+                  type="text"
+                  v-model="genInfo.street"
+                  placeholder="Street"
+                  autocapitalize="words"
+                  class="
+                    px-4
+                    w-full
+                    h-12
+                    bg-black
+                    placeholder-gray-600
+                    rounded
+                    border border-transparent
+                    transition-colors
+                    duration-200
+                    focus:outline-none focus:border-gray-600
+                    hover:border-gray-600
+                  "
+                />
+              </div>
+              <div>
+                <label for="business-street-no" class="sr-only">Number</label>
+                <input
+                  id="business-street-no"
+                  spellcheck="false"
+                  type="text"
+                  v-model="genInfo.streetNo"
+                  placeholder="No."
+                  class="
+                    px-4
+                    w-full
+                    h-12
+                    bg-black
+                    placeholder-gray-600
+                    rounded
+                    border border-transparent
+                    transition-colors
+                    duration-200
+                    focus:outline-none focus:border-gray-600
+                    hover:border-gray-600
+                  "
+                />
+              </div>
+              <div>
+                <label for="business-zip" class="sr-only">ZIP</label>
+                <input
+                  id="business-zip"
+                  spellcheck="false"
+                  type="text"
+                  v-model="genInfo.zip"
+                  placeholder="ZIP"
+                  class="
+                    px-4
+                    w-full
+                    h-12
+                    bg-black
+                    placeholder-gray-600
+                    rounded
+                    border border-transparent
+                    transition-colors
+                    duration-200
+                    focus:outline-none focus:border-gray-600
+                    hover:border-gray-600
+                  "
+                />
+              </div>
+              <div class="col-span-2">
+                <label for="business-city" class="sr-only">City</label>
+                <input
+                  id="business-city"
+                  spellcheck="false"
+                  type="text"
+                  v-model="genInfo.city"
+                  placeholder="City"
+                  autocapitalize="words"
+                  class="
+                    px-4
+                    w-full
+                    h-12
+                    bg-black
+                    placeholder-gray-600
+                    rounded
+                    border border-transparent
+                    transition-colors
+                    duration-200
+                    focus:outline-none focus:border-gray-600
+                    hover:border-gray-600
+                  "
+                />
+              </div>
+              <div class="col-span-3">
+                <label for="business-country" class="sr-only">Country</label>
+                <input
+                  id="business-country"
+                  spellcheck="false"
+                  type="text"
+                  v-model="genInfo.country"
+                  placeholder="Country"
+                  autocapitalize="words"
+                  class="
+                    px-4
+                    w-full
+                    h-12
+                    bg-black
+                    placeholder-gray-600
+                    rounded
+                    border border-transparent
+                    transition-colors
+                    duration-200
+                    focus:outline-none focus:border-gray-600
+                    hover:border-gray-600
+                  "
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div id="step-3" class="mt-16">
@@ -687,73 +661,6 @@
             </p>
           </div>
         </div>
-        <div id="step-6" class="mt-16">
-          <h2 class="font-extrabold text-2xl">Footer credit</h2>
-          <div class="stepC mt-6">
-            <div class="flex items-center">
-              <div
-                class="
-                  relative
-                  group
-                  inline-block
-                  w-24
-                  h-12
-                  mr-3
-                  align-middle
-                  select-none
-                  transition
-                  duration-200
-                  ease-in
-                  bg-gray-700
-                  rounded
-                  hover:bg-gray-600
-                  focus:bg-gray-600
-                  cursor-pointer
-                  focus:outline-none
-                "
-                :class="{
-                  'bg-emerald-600 hover:bg-emerald-500 focus:bg-emerald-500':
-                    footerCredit,
-                }"
-                tabindex="0"
-                @click="footerCredit = !footerCredit"
-                @keypress.space.enter.prevent="footerCredit = !footerCredit"
-              >
-                <transition name="slide">
-                  <input
-                    type="checkbox"
-                    name="toggle"
-                    aria-label="Toggle footer credit"
-                    id="toggle"
-                    v-model="footerCredit"
-                    class="
-                      toggle-switch
-                      absolute
-                      block
-                      w-10
-                      h-10
-                      m-1
-                      rounded
-                      border-4 border-transparent
-                      appearance-none
-                      cursor-pointer
-                      transition-colors
-                      duration-200
-                      focus:outline-none
-                      bg-white
-                    "
-                    tabindex="-1"
-                  />
-                </transition>
-              </div>
-              <p>{{ footerCredit ? 'Enabled' : 'Disabled' }}</p>
-            </div>
-            <p class="mt-6 border p-4 rounded border-gray-700 text-gray-400">
-              By enabling the footer credit, you can help this project reach
-              more people.
-            </p>
-          </div>
-        </div>
         <div id="step-7" class="mt-16">
           <h2 class="font-extrabold text-2xl">Themes</h2>
           <div class="stepC mt-3 flex flex-wrap">
@@ -899,79 +806,18 @@
             from the same font family.
           </p>
         </div>
-        <div id="step-10" class="mt-16">
-          <h2 class="font-extrabold text-2xl">Analytics</h2>
-          <div class="stepC mt-6">
-            <label for="tracking-code" class="ml-4">Tracking code</label>
-            <textarea
-              id="tracking-code"
-              aria-label="tracking-code"
-              v-model="genInfo.tracker"
-              class="
-                block
-                mt-2
-                px-4
-                py-3
-                w-full
-                bg-black
-                placeholder-gray-600
-                rounded
-                border border-transparent
-                transition-colors
-                duration-200
-                focus:outline-none focus:border-gray-600
-                resize-none
-                hover:border-gray-600
-              "
-              rows="4"
-              spellcheck="false"
-              placeholder="Paste tracking code here"
-            ></textarea>
-            <p class="mt-6 border p-4 rounded border-gray-700 text-gray-400">
-              Supports services such as Clicky, Matomo, Google Analytics etc.
-            </p>
-          </div>
-        </div>
-        <div id="step-11" class="mt-16">
-          <h2 class="font-extrabold text-2xl">Hosting</h2>
-          <div class="stepC mt-6">
-            <label for="hosted-url" class="ml-4">Hosted card URL</label>
-            <input
-              spellcheck="false"
-              type="text"
-              id="hosted-url"
-              v-model="hostedURL"
-              class="
-                block
-                mt-2
-                px-4
-                py-3
-                w-full
-                bg-black
-                placeholder-gray-600
-                rounded
-                border border-transparent
-                transition-colors
-                duration-200
-                focus:outline-none focus:border-gray-600
-                resize-none
-                hover:border-gray-600
-              "
-              placeholder="https://yoursite/vcard/username"
-            />
-            <p class="mt-6 border p-4 rounded border-gray-700 text-gray-400">
-              Only paste your hosting URL if you've already decided where you
-              want to host this digital business card. If you haven't decided
-              yet, please skip this step.
-            </p>
-          </div>
-        </div>
         <Download
-          :downloadCheckList="downloadCheckList"
-          :downloadChecked="downloadChecked"
-          :downloadPackage="downloadPackage"
+          mode="publish"
+          :publishCard="publishCard"
+          :publishBusy="publishBusy"
+          :publishLabel="publishLabel"
+          :authUser="authUser"
+          :userCards="userCards"
+          :cardsLoading="cardsLoading"
+          :copyCardLink="copyCardLink"
+          :loadCard="loadCard"
+          :deleteCard="deleteCard"
         />
-        <Help />
       </div>
       <div
         id="preview-container"
@@ -988,60 +834,33 @@
             lg:mx-12
           "
         >
-          <div id="device" class="bg-black rounded sm:mt-10">
+          <div id="device" class="sm:mt-10">
             <h2 class="text-center py-4 font-extrabold text-gray-200">
               LIVE PREVIEW
             </h2>
-            <div id="browserFrame" class="overflow-hidden flex flex-col">
-              <div
-                id="topBar"
-                class="
-                  topbar
-                  border-r-4 border-l-4 border-black
-                  bg-gray-900
-                  z-10
-                "
-              >
-                <div id="searchField" class="p-2 flex items-center">
-                  <input
-                    type="text"
-                    class="pl-4 h-12 w-full bg-black rounded text-gray-500"
-                    aria-label="vCard URL"
-                    disabled
-                    :value="'https://yoursite/vcard/' + username"
-                    tabindex="-1"
-                  />
-                  <div
-                    class="w-6 ml-2"
-                    v-html="require(`~/assets/icons/ellipsis.svg?include`)"
-                  ></div>
-                </div>
-              </div>
-              <Preview
-                class="rounded-b-2xl"
-                ref="html"
-                :username="username"
-                :genInfo="genInfo"
-                :images="images"
-                :featured="featured"
-                :colors="colors"
-                :primaryActions="primaryActions"
-                :secondaryActions="secondaryActions"
-                :PreviewMode="PreviewMode"
-                :downloadVcard="downloadVcard"
-                :footerCredit="footerCredit"
-                :showAlert="showAlert"
-                :hasLightBG="hasLightBG"
-                :downloadKey="downloadKey"
-                :pubKeyIsValid="pubKeyIsValid"
-              />
-            </div>
+            <Preview
+              ref="html"
+              :username="username"
+              :genInfo="genInfo"
+              :images="images"
+              :featured="featured"
+              :colors="colors"
+              :primaryActions="primaryActions"
+              :secondaryActions="secondaryActions"
+              :PreviewMode="PreviewMode"
+              :downloadVcard="downloadVcard"
+              :footerCredit="footerCredit"
+              :showAlert="showAlert"
+              :hasLightBG="hasLightBG"
+              :shareEnabled="Boolean(hostedURL)"
+              :shareUrl="hostedURL"
+              :hostedView="true"
+            />
           </div>
         </div>
       </div>
     </div>
     <Vcard ref="vCard" :vCard="vCard" />
-    <Footer />
   </div>
 </template>
 
@@ -1053,20 +872,14 @@ import Featured from '@/components/Featured'
 import Colour from '@/components/Colour'
 import Preview from '@/components/Preview'
 import Download from '@/components/Download'
-import Help from '@/components/Help'
-import Footer from '@/components/Footer'
 import Cropper from '@/components/Cropper'
 
 import Vcard from '@/components/Vcard'
-import JSZip from 'jszip'
 import draggable from 'vuedraggable'
 
 import { saveAs } from 'file-saver'
-import QRCode from '!!raw-loader!~/static/qrcode.min.js'
-import Theme1 from '!!raw-loader!~/assets/styles/T1.min.css'
-import Theme2 from '!!raw-loader!~/assets/styles/T2.min.css'
-import Theme3 from '!!raw-loader!~/assets/styles/T3.min.css'
 import { mapState, mapActions } from 'vuex'
+const { normalizeGenInfoAddress } = require('../utils/address')
 
 export default {
   components: {
@@ -1078,29 +891,13 @@ export default {
     Colour,
     Preview,
     Download,
-    Help,
-    Footer,
     Vcard,
     draggable,
   },
 
   data() {
     return {
-      downloadCheckList: [
-        {
-          label:
-            'I did not attach any link or file that will cause any risk to the user',
-          checked: false,
-        },
-        {
-          label: 'I have verified that all the links are working correctly',
-          checked: false,
-        },
-        {
-          label: 'I have removed all unused fields and sections',
-          checked: false,
-        },
-      ],
+      downloadCheckList: [],
       images: {
         logo: {
           url: null,
@@ -1126,7 +923,7 @@ export default {
       },
       colors: {
         logoBg: {
-          color: `#059669`,
+          color: `#000000`,
           openPalette: false,
         },
         mainBg: {
@@ -1134,7 +931,7 @@ export default {
           openPalette: false,
         },
         buttonBg: {
-          color: `#059669`,
+          color: `#7dd3fc`,
           openPalette: false,
         },
         cardBg: {
@@ -1149,6 +946,11 @@ export default {
         title: null,
         biz: null,
         addr: null,
+        street: null,
+        streetNo: null,
+        city: null,
+        zip: null,
+        country: null,
         desc: null,
         key: null,
         tracker: null,
@@ -1731,14 +1533,92 @@ export default {
         },
       ],
       hostedURL: null,
-      footerCredit: true,
+      footerCredit: false,
       PreviewMode: true,
       content: null,
       inView: false,
       showPreview: false,
       scrollPos: null,
       opening: false,
+      publishBusy: false,
+      cardsLoading: false,
+      authUser: null,
+      userCards: [],
+      currentCardId: null,
+      currentCardSlug: null,
+      actionCatalog: null,
+      defaultDraft: null,
+      defaultDownloadCheckList: null,
+      draftHydrating: false,
+      draftInitialized: false,
+      draftSaveTimer: null,
+      lastSavedDraftSignature: null,
     }
+  },
+  created() {
+    this.actionCatalog = JSON.parse(JSON.stringify(this.actions))
+    this.defaultDraft = JSON.parse(
+      JSON.stringify({
+        images: this.images,
+        colors: this.colors,
+        genInfo: this.genInfo,
+        featured: this.featured,
+        footerCredit: this.footerCredit,
+      })
+    )
+    this.defaultDownloadCheckList = JSON.parse(
+      JSON.stringify(this.downloadCheckList)
+    )
+  },
+  watch: {
+    images: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      },
+    },
+    colors: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      },
+    },
+    genInfo: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      },
+    },
+    primaryActions: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      },
+    },
+    secondaryActions: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      },
+    },
+    featured: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      },
+    },
+    theme() {
+      this.scheduleDraftSave()
+    },
+    currentCardId() {
+      this.scheduleDraftSave()
+    },
+    currentCardSlug() {
+      this.scheduleDraftSave()
+    },
+    hostedURL() {
+      this.scheduleDraftSave()
+    },
   },
   computed: {
     ...mapState(['theme']),
@@ -1747,24 +1627,16 @@ export default {
       let ln = this.genInfo.lname
       return (fn + ln).length ? `${fn ? fn : ''}${ln ? ' ' + ln : ''}` : null
     },
-    pubKeyIsValid() {
-      if (this.genInfo.key) {
-        if (!this.genInfo.key.match(/^(-----BEGIN PGP PUBLIC KEY BLOCK-----)/))
-          return false
-
-        if (!this.genInfo.key.match(/(-----END PGP PUBLIC KEY BLOCK-----)$/))
-          return false
-
-        return true
-      } else return false
-    },
     downloadChecked() {
-      return this.downloadCheckList.filter((e) => e.checked).length == 3
+      return true
     },
     username() {
       return this.getFullname
         ? this.getFullname.toLowerCase().replace(/\W+/g, '')
         : 'username'
+    },
+    publishLabel() {
+      return this.currentCardId ? 'Update live card' : 'Save live card'
     },
     orderedPrimaryActions() {
       return this.actions.primaryActions.sort((a, b) =>
@@ -1818,17 +1690,13 @@ export default {
         })
         .filter((e) => e)
 
-      let note = this.genInfo.desc
-        ? this.genInfo.desc.replace(/[\r\n]+/gm, '')
-        : null
-      let key = this.pubKeyIsValid ? window.btoa(this.genInfo.key) : null
       let randomNumber = Math.floor(100000000 + Math.random() * 900000)
       return {
         fn: this.genInfo.fname,
         ln: this.genInfo.lname,
         title: this.genInfo.title,
         org: this.genInfo.biz,
-        addr: this.genInfo.addr,
+        address: this.genInfo,
         cell: getNumber('Mobile'),
         work: getNumber('Office'),
         home: getNumber('Home'),
@@ -1837,8 +1705,6 @@ export default {
         hostedURL: this.hostedURL,
         website,
         urls,
-        key,
-        note,
         uid: `EnBizCard-${randomNumber}`,
       }
     },
@@ -1870,9 +1736,6 @@ export default {
     },
     clearContent() {
       this.content = null
-    },
-    create() {
-      this.$refs.create.scrollIntoView({ behavior: 'smooth' })
     },
     getTitle(e) {
       return e.toLowerCase().split(' ').join('_')
@@ -1923,15 +1786,6 @@ export default {
         type: 'text/plain',
       })
       saveAs(window.URL.createObjectURL(blob), `${this.username}.vcf`)
-    },
-    downloadKey() {
-      let blob = new Blob([this.genInfo.key], {
-        type: 'text/plain',
-      })
-      saveAs(
-        window.URL.createObjectURL(blob),
-        `${this.getFullname}'s public key.asc`
-      )
     },
     async resizeImage(type, mime, index1, index2) {
       let vm = this
@@ -2003,176 +1857,440 @@ export default {
       }
       reader.readAsDataURL(file)
     },
-    getTrackingCode() {
-      let regex = /<script[^<]*<\/script>/g
-      let tracker = this.genInfo.tracker
-      if (regex.test(tracker)) {
-        let scripts = tracker.match(regex)
-        let temp = document.createElement('div')
-        temp.innerHTML = tracker
-        return scripts.length && temp
-      }
-      return false
+    cloneDeep(value) {
+      return JSON.parse(JSON.stringify(value))
     },
-    downloadPackage() {
-      if (this.downloadChecked) {
-        this.PreviewMode = false
-        setTimeout(() => {
-          let el = new DOMParser().parseFromString(
-            this.$refs.html.$refs.html.outerHTML,
-            'text/html'
-          )
+    async blobToDataURL(blob) {
+      return await new Promise((resolve, reject) => {
+        if (!blob) {
+          resolve(null)
+          return
+        }
 
-          // Inject stylesheets
-          let styleLink = document.createElement('link')
-          styleLink.rel = 'stylesheet'
-          styleLink.href = './style.min.css'
-          el.querySelector('head').appendChild(styleLink)
+        const reader = new FileReader()
+        reader.onload = (event) => resolve(event.target.result)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+    },
+    async resolveDataURL(existing, blob) {
+      if (typeof existing === 'string' && existing.startsWith('data:')) {
+        return existing
+      }
+      if (blob) {
+        return await this.blobToDataURL(blob)
+      }
+      return existing || null
+    },
+    normalizeFeaturedItem(item) {
+      if (!item || typeof item === 'string') {
+        return item
+      }
 
-          // Inject qrcode script
-          let qrcode = document.createElement('script')
-          qrcode.src = './qrcode.min.js'
-          el.querySelector('body').appendChild(qrcode)
+      if (item.contentType === 'text') {
+        return {
+          contentType: 'text',
+          value: item.value || null,
+        }
+      }
 
-          // Inject general script
-          let modals = document.createElement('script')
-          modals.innerText =
-            'let m=document.getElementById("modal"),c=document.getElementById("close"),ki=document.getElementById("keyView"),cv=document.getElementById("copyView"),curl=document.getElementById("copyURL"),qrv=document.getElementById("qrView"),qr=document.getElementById("qr"),s=document.getElementById("share"),sqr=document.getElementById("showQR"),sk=document.getElementById("showKey");function tC(e){"2rem"==e.style.top?(e.style.visibility="visible",e.style.top="0px",e.style.opacity=1):(e.style.top="2rem",e.style.opacity=0,setTimeout(()=>{e.style.visibility="hidden"},200))}function dN(e){e.style.display="none"}window.addEventListener("load",()=>{document.querySelector("#topActions").style.display="flex",qr.innerHTML=new QRCode({content:window.location.href,container:"svg-viewbox",join:!0,ecl:"L",padding:0}).svg()}),navigator.canShare?s.addEventListener("click",()=>{navigator.share({title:document.title,text:"You can view my Digital Business Card here:",url:window.location.href})}):s.addEventListener("click",()=>{tC(m),cv.style.display="flex",dN(qrv),ki&&dN(ki)}),sqr.addEventListener("click",()=>{tC(m),qrv.style.display="block",dN(cv),ki&&dN(ki)}),sk&&sk.addEventListener("click",()=>{tC(m),ki&&(ki.style.display="flex"),dN(cv),dN(qrv)}),c.addEventListener("click",()=>tC(m)),curl.addEventListener("click",async()=>{let e=curl.querySelectorAll(".iconColor")[1];await navigator.clipboard.writeText(window.location.href).then(t=>{e.innerText="Copied",setTimeout(()=>{e.innerText="Copy URL"},1e3)})});'
-          el.querySelector('body').appendChild(modals)
+      if (item.contentType === 'product') {
+        return {
+          ...item,
+          image: item.image
+            ? {
+                ...item.image,
+                file: null,
+              }
+            : null,
+        }
+      }
 
-          // Inject media script
-          let mediaHandler = document.createElement('script')
-          mediaHandler.innerText =
-            'let pC=document.querySelectorAll(".pCtrl"),pP=document.querySelectorAll(".playPause"),srcs=document.querySelectorAll(".source");srcs.forEach(e=>{e.style.pointerEvents="none",e.removeAttribute("controls")}),pC.forEach((e,l)=>{e.style.display="flex";let r=e.querySelector(".currentTime"),s=e.querySelector(".seekBar"),t=e.querySelector(".playPause"),a=t.querySelector(".play"),c=t.querySelector(".pause");srcs[l].addEventListener("timeupdate",()=>{let e=srcs[l].currentTime,t=100/srcs[l].duration*e;s.value=t,100==t&&(s.value=0,a.style.display="block",c.style.display="none");let o=Math.floor(e/60),y=Math.floor(e%60);o.toString().length<2&&(o="0"+o),y.toString().length<2&&(y="0"+y),r.value=o+":"+y}),s.addEventListener("change",()=>{srcs[l].currentTime=srcs[l].duration*(parseInt(s.value)/100)}),t.addEventListener("click",()=>{srcs[l].paused?(srcs.forEach((e,r)=>{l!=r&&(e.paused||e.pause())}),pP.forEach((e,l)=>{let r=e.querySelector(".play"),s=e.querySelector(".pause");r.style.display="block",s.style.display="none"}),srcs[l].play(),a.style.display="none",c.style.display="block"):(srcs[l].pause(),c.style.display="none",a.style.display="block")})});'
-          if (this.featured.length)
-            el.querySelector('body').appendChild(mediaHandler)
+      if (item.contentType === 'media') {
+        return {
+          ...item,
+          file: null,
+          cover: null,
+        }
+      }
 
-          // Inject tracking scripts
-          let tracker = this.getTrackingCode()
-          while (tracker.firstChild) el.head.appendChild(tracker.firstChild)
+      return item
+    },
+    rebuildActionAvailability() {
+      this.actions = this.cloneDeep(this.actionCatalog)
 
-          // Create blobs
-          let html = new Blob(
-            [`<!DOCTYPE html>${el.documentElement.outerHTML}`],
-            {
-              type: 'text/html',
-            }
-          )
-          let theme = 1
-          switch (this.theme) {
-            case 1:
-              theme = Theme1
-              break
-            case 2:
-              theme = Theme2
-              break
-            case 3:
-              theme = Theme3
-              break
-          }
-          let css = new Blob([theme], {
-            type: 'text/css',
-          })
-          let vCard = new Blob([this.$refs.vCard.$refs.vCard.innerText], {
-            type: 'text/plain',
-          })
-          let guide = new Blob(
-            [
-              '<html><head><meta http-equiv="refresh" content="0; url=https://enbizcard.vishnuraghav.com/hosting-guide" /></head></html>',
-            ],
-            {
-              type: 'text/html',
-            }
-          )
-          let qrScript = new Blob([QRCode], {
-            type: 'application/javascript',
-          })
+      const selectedPrimary = new Set(
+        this.primaryActions.map((item) => item.name)
+      )
+      const selectedSecondary = new Set(
+        this.secondaryActions.map((item) => item.name)
+      )
 
-          // Prepare files
-          let username = this.username
-          let zip = new JSZip()
-          zip.folder(username).file('index.html', html)
-          zip.folder(username).file('style.min.css', css)
-          zip.folder(username).file('qrcode.min.js', qrScript)
-          zip.file('Hosting-Guide.html', guide)
-
-          // Image attachments
-          for (const key in this.images) {
-            if (this.images[key].url) {
-              zip
-                .folder(username)
-                .file(
-                  `${key}.${this.images[key].ext}`,
-                  this.images[key].resized
-                )
-            }
-          }
-
-          // Featured content
-          let hasFeaturedContent = this.featured.filter(
-            (e) => e.content.length
-          ).length
-          if (hasFeaturedContent) {
-            this.featured.forEach((item) => {
-              item.content.forEach((item) => {
-                if (item.contentType == 'media') {
-                  zip
-                    .folder(username)
-                    .folder('media')
-                    .file(`${this.getTitle(item.title)}.${item.ext}`, item.file)
-                  if (item.type.match(/music|document/gi)) {
-                    if (!item.info) {
-                      zip
-                        .folder(username)
-                        .folder('media')
-                        .file(
-                          `${this.getTitle(item.title)}.${item.coverExt}`,
-                          item.cover
-                        )
-                    }
-                  }
-                } else if (item.contentType == 'product' && item.image) {
-                  zip
-                    .folder(username)
-                    .folder('media')
-                    .file(
-                      `${this.getTitle(item.image.title)}.${item.image.ext}`,
-                      item.image.file
-                    )
+      this.actions.primaryActions = this.actions.primaryActions.filter(
+        (item) => !selectedPrimary.has(item.name)
+      )
+      this.actions.secondaryActions = this.actions.secondaryActions.filter(
+        (item) => !selectedSecondary.has(item.name)
+      )
+    },
+    async serializeFeatured() {
+      return await Promise.all(
+        this.featured.map(async (section) => {
+          return {
+            title: section.title || 'Section title',
+            content: await Promise.all(
+              (section.content || []).map(async (item) => {
+                if (!item || typeof item === 'string') {
+                  return item
                 }
+
+                if (item.contentType === 'text') {
+                  return {
+                    contentType: 'text',
+                    value: item.value || null,
+                  }
+                }
+
+                if (item.contentType === 'product') {
+                  return {
+                    ...this.cloneDeep(item),
+                    image: item.image
+                      ? {
+                          ...this.cloneDeep(item.image),
+                          dataURI: await this.resolveDataURL(
+                            item.image.dataURI,
+                            item.image.file
+                          ),
+                          file: null,
+                        }
+                      : null,
+                  }
+                }
+
+                if (item.contentType === 'media') {
+                  return {
+                    ...this.cloneDeep(item),
+                    dataURI: await this.resolveDataURL(item.dataURI, item.file),
+                    coverDataURI: await this.resolveDataURL(
+                      item.coverDataURI,
+                      item.cover
+                    ),
+                    file: null,
+                    cover: null,
+                  }
+                }
+
+                return item
               })
-            })
+            ),
           }
+        })
+      )
+    },
+    async serializeCardPayload() {
+      const genInfo = this.cloneDeep(this.genInfo)
+      genInfo.desc = null
+      genInfo.key = null
 
-          //  Public key
-          let name = this.getFullname
-          if (this.pubKeyIsValid) {
-            zip
-              .folder(username)
-              .file(`${name}'s public key.asc`, this.genInfo.key)
-          }
+      return {
+        theme: this.theme,
+        footerCredit: false,
+        colors: this.cloneDeep(this.colors),
+        genInfo,
+        images: {
+          logo: {
+            url: this.images.logo.url,
+            ext: this.images.logo.ext,
+            mime: this.images.logo.mime,
+          },
+          photo: {
+            url: this.images.photo.url,
+            ext: this.images.photo.ext,
+            mime: this.images.photo.mime,
+          },
+          cover: {
+            url: this.images.cover.url,
+            ext: this.images.cover.ext,
+            mime: this.images.cover.mime,
+          },
+        },
+        primaryActions: this.cloneDeep(this.primaryActions),
+        secondaryActions: this.cloneDeep(this.secondaryActions),
+        featured: await this.serializeFeatured(),
+      }
+    },
+    async serializeDraftPayload() {
+      return {
+        ...(await this.serializeCardPayload()),
+        currentCardId: this.currentCardId,
+        currentCardSlug: this.currentCardSlug,
+        hostedURL: this.hostedURL,
+        downloadCheckList: this.cloneDeep(this.downloadCheckList),
+      }
+    },
+    async apiJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+      })
+      const payload = await response.json().catch(() => ({}))
 
-          // VCARD
-          zip.folder(username).file(`${username}.vcf`, vCard)
+      if (!response.ok) {
+        throw new Error(payload.error || 'Request failed')
+      }
 
-          // Final ZIP file
-          zip
-            .generateAsync({
-              type: 'blob',
+      return payload
+    },
+    getCardURL(slug) {
+      return `${window.location.origin}/vcard/${slug}`
+    },
+    async refreshUserCards() {
+      if (!this.authUser) {
+        this.userCards = []
+        return
+      }
+
+      this.cardsLoading = true
+      try {
+        const payload = await this.apiJson('/api/cards')
+        this.authUser = payload.user
+        this.userCards = payload.cards || []
+      } finally {
+        this.cardsLoading = false
+      }
+    },
+    async refreshAuth() {
+      const previousEmail = this.authUser ? this.authUser.email : null
+      const payload = await this.apiJson('/api/me')
+      this.authUser = payload.user
+      if (this.authUser) {
+        if (this.authUser.email !== previousEmail) {
+          this.draftInitialized = false
+          this.lastSavedDraftSignature = null
+        }
+        await this.refreshUserCards()
+        await this.loadLatestDraft()
+      } else {
+        this.userCards = []
+      }
+    },
+    async loadLatestDraft() {
+      if (!this.authUser || this.draftInitialized) {
+        return
+      }
+
+      const payload = await this.apiJson('/api/draft')
+      this.draftInitialized = true
+
+      if (payload.draft && payload.draft.payload) {
+        this.applyDraftPayload(payload.draft.payload)
+        this.lastSavedDraftSignature = JSON.stringify(payload.draft.payload)
+      }
+    },
+    scheduleDraftSave() {
+      if (!this.authUser || this.draftHydrating) {
+        return
+      }
+
+      clearTimeout(this.draftSaveTimer)
+      this.draftSaveTimer = setTimeout(() => {
+        this.saveDraft().catch((error) => {
+          this.showAlert(error.message)
+        })
+      }, 1000)
+    },
+    async saveDraft() {
+      if (!this.authUser || this.draftHydrating) {
+        return
+      }
+
+      const payload = await this.serializeDraftPayload()
+      const signature = JSON.stringify(payload)
+
+      if (signature === this.lastSavedDraftSignature) {
+        return
+      }
+
+      await this.apiJson('/api/draft', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          draft: payload,
+        }),
+      })
+
+      this.lastSavedDraftSignature = signature
+    },
+    async copyText(value) {
+      if (!value) {
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(value)
+        this.showAlert('Copied the URL to your clipboard.')
+      } catch (error) {
+        this.showAlert('Clipboard access is unavailable in this browser.')
+      }
+    },
+    async copyCardLink(card) {
+      await this.copyText(card.url || this.getCardURL(card.slug))
+    },
+    applyEditorState(data, options = {}) {
+      const baseDraft = this.cloneDeep(this.defaultDraft)
+      const baseDownloadCheckList = this.cloneDeep(
+        this.defaultDownloadCheckList
+      )
+
+      this.draftHydrating = true
+      this.images = {
+        logo: { ...baseDraft.images.logo, ...((data.images || {}).logo || {}) },
+        photo: { ...baseDraft.images.photo, ...((data.images || {}).photo || {}) },
+        cover: { ...baseDraft.images.cover, ...((data.images || {}).cover || {}) },
+      }
+      this.colors = {
+        logoBg: {
+          ...baseDraft.colors.logoBg,
+          ...((data.colors || {}).logoBg || {}),
+        },
+        mainBg: {
+          ...baseDraft.colors.mainBg,
+          ...((data.colors || {}).mainBg || {}),
+        },
+        buttonBg: {
+          ...baseDraft.colors.buttonBg,
+          ...((data.colors || {}).buttonBg || {}),
+        },
+        cardBg: {
+          ...baseDraft.colors.cardBg,
+          ...((data.colors || {}).cardBg || {}),
+        },
+      }
+      this.genInfo = normalizeGenInfoAddress({
+        ...baseDraft.genInfo,
+        ...(data.genInfo || {}),
+      })
+      this.primaryActions = this.cloneDeep(data.primaryActions || [])
+      this.secondaryActions = this.cloneDeep(data.secondaryActions || [])
+      this.featured =
+        data.featured && data.featured.length
+          ? data.featured.map((section) => {
+              return {
+                title: section.title || 'Section title',
+                content: (section.content || []).map((item) =>
+                  this.normalizeFeaturedItem(item)
+                ),
+              }
             })
-            .then(function (zip) {
-              saveAs(zip, `${name}'s Digital Business Card.zip`)
-            })
-          this.PreviewMode = true
-        }, 250)
+          : this.cloneDeep(baseDraft.featured)
+      this.footerCredit = false
+      this.downloadCheckList =
+        options.downloadCheckList && options.downloadCheckList.length
+          ? this.cloneDeep(options.downloadCheckList)
+          : baseDownloadCheckList
+      this.currentCardId = options.currentCardId || null
+      this.currentCardSlug = options.currentCardSlug || null
+      this.hostedURL = options.hostedURL || null
+      this.changeTheme(data.theme || 1)
+      this.rebuildActionAvailability()
+      this.$nextTick(() => {
+        this.draftHydrating = false
+      })
+    },
+    applyLoadedCard(card) {
+      this.applyEditorState(card.data || {}, {
+        currentCardId: card.id,
+        currentCardSlug: card.slug,
+        hostedURL: card.url || this.getCardURL(card.slug),
+      })
+    },
+    applyDraftPayload(payload) {
+      this.applyEditorState(payload || {}, {
+        currentCardId: payload.currentCardId || null,
+        currentCardSlug: payload.currentCardSlug || null,
+        hostedURL: payload.hostedURL || null,
+        downloadCheckList: payload.downloadCheckList || [],
+      })
+    },
+    async loadCard(card) {
+      try {
+        const payload = await this.apiJson(`/api/cards/${card.id}`)
+        this.applyLoadedCard(payload.card)
+        this.showAlert('Opened the published card in the editor.')
+      } catch (error) {
+        this.showAlert(error.message)
+      }
+    },
+    async deleteCard(card) {
+      if (
+        !window.confirm(
+          `Delete the hosted card${card.fullName ? ` for ${card.fullName}` : ''}?`
+        )
+      ) {
+        return
+      }
+
+      try {
+        await this.apiJson(`/api/cards/${card.id}`, {
+          method: 'DELETE',
+        })
+        if (this.currentCardId === card.id) {
+          this.currentCardId = null
+          this.currentCardSlug = null
+          this.hostedURL = null
+        }
+        await this.refreshUserCards()
+      } catch (error) {
+        this.showAlert(error.message)
+      }
+    },
+    async publishCard() {
+      if (!this.downloadChecked || this.publishBusy || !this.authUser) {
+        return
+      }
+
+      this.publishBusy = true
+      try {
+        const payload = await this.serializeCardPayload()
+        const result = await this.apiJson('/api/cards', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: this.currentCardId,
+            card: payload,
+          }),
+        })
+
+        this.currentCardId = result.card.id
+        this.currentCardSlug = result.card.slug
+        this.hostedURL = result.card.url
+        await this.refreshUserCards()
+        this.showAlert(
+          `Your card is live.<br /><br /><a class="underline font-extrabold text-emerald-600 hover:text-emerald-500 transition-colors duration-200" href="${this.hostedURL}" target="_blank" rel="noreferrer">Open the hosted card</a>`
+        )
+      } catch (error) {
+        this.showAlert(error.message)
+      } finally {
+        this.publishBusy = false
       }
     },
   },
   mounted() {
     window.addEventListener('scroll', this.checkView)
+    this.refreshAuth().catch((error) => {
+      this.showAlert(error.message)
+    })
     // window.onbeforeunload = function () {
     //   return 'Your work will be lost.'
     // }
+  },
+  beforeDestroy() {
+    window.removeEventListener('scroll', this.checkView)
+    clearTimeout(this.draftSaveTimer)
   },
 }
 </script>

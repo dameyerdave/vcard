@@ -1,7 +1,10 @@
+.env
+.git
 .github
 .idea
 .nuxt
 .vscode
+data
 node_modules
 dist
 public

@@ -8,7 +8,7 @@ export default {
    ** Nuxt target
    ** See https://nuxtjs.org/api/configuration-target
    */
-  target: 'static',
+  target: 'server',
   /*
    ** Headers of the page
    ** See https://nuxtjs.org/api/configuration-head
@@ -17,25 +17,24 @@ export default {
     ogType: 'website',
     ogImage: '/maskable_512.png',
     // ogUrl: false,
-    ogTitle: 'EnBizCard - An Open-Source Digital Business Card Generator',
+    ogTitle: 'xuno vcard generator',
     ogDescription:
-      'EnBizCard helps you create beautiful, responsive HTML-based digital business cards that can be hosted on your website.',
-    ogSiteName: 'EnBizCard - An Open-Source Digital Business Card Generator',
+      'xuno vcard generator lets you create and host digital business cards.',
+    ogSiteName: 'xuno vcard generator',
     theme_color: '#111827',
     author: 'Vishnu Raghav',
     lang: 'en',
-    name: 'EnBizCard - An Open-Source Digital Business Card Generator',
+    name: 'xuno vcard generator',
   },
   head: {
-    title: 'EnBizCard - An Open-Source Digital Business Card Generator',
+    title: 'xuno vcard generator',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       {
         hid: 'description',
         name: 'description',
-        content:
-          'EnBizCard helps you create beautiful, responsive HTML-based digital business cards that can be hosted on your website.',
+        content: 'xuno vcard generator lets you create and host digital business cards.',
       },
       {
         hid: 'msapplication-TileColor',
@@ -80,8 +79,8 @@ export default {
     script: [{ src: '/qrcode.min.js' }],
   },
   manifest: {
-    name: 'EnBizCard - An Open-Source Digital Business Card Generator',
-    short_name: 'EnBizCard',
+    name: 'xuno vcard generator',
+    short_name: 'xuno vcard',
     start_url: '/',
     display: 'standalone',
     theme_color: '#111827',
@@ -177,6 +176,16 @@ export default {
    ** https://nuxtjs.org/guide/plugins
    */
   plugins: [],
+  router: {
+    extendRoutes(routes, resolve) {
+      routes.push({
+        name: 'vcard-slug',
+        path: '/vcard/:slug',
+        component: resolve(__dirname, 'pages/c/_slug.vue'),
+      })
+    },
+  },
+  serverMiddleware: ['~/server/public-card.js', '~/server/api.js'],
   /*
    ** Auto import components
    ** See https://nuxtjs.org/api/configuration-components
@@ -246,10 +255,6 @@ export default {
         useShortDoctype: true,
       },
     },
-  },
-  generate: {
-    dir: 'public',
-    fallback: true,
   },
   telemetry: false,
 }

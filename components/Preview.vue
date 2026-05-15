@@ -1,6 +1,10 @@
 <template>
   <div
-    class="overflow-y-scroll max-hd border-t-0 border-4 border-black bg-gray-900"
+    :class="
+      hostedView
+        ? 'hostedPreview bg-gray-900'
+        : 'overflow-y-scroll max-hd border-t-0 border-4 border-black bg-gray-900'
+    "
   >
     <div :id="`Theme${theme}`">
       <html
@@ -17,9 +21,9 @@
           <meta v-if="!PreviewMode" name="robots" content="noindex, nofollow" />
           <meta
             name="author"
-            content="EnBizCard - An Open-Source Digital Business Card Generator"
+            content="xuno vcard generator"
           />
-          <meta name="url" content="https://enbizcard.vishnuraghav.com/" />
+          <meta name="url" content="/" />
           <meta name="designer" content="Vishnu Raghav" />
           <meta
             property="og:title"
@@ -60,38 +64,17 @@
                 v-html="require(`~/assets/icons/close.svg?include`)"
               ></div>
             </a>
-            <div id="keyView">
-              <p class="textColor">
-                Use my public key to send me encrypted messages
-              </p>
-              <a
-                :href="!PreviewMode && `./${getFullname}'s public key.asc`"
-                download
-                target="_blank"
-                id="dlKey"
-                rel="noreferrer"
-                @click.prevent.capture="downloadKey()"
-                :style="{
-                  backgroundColor: `${colors.buttonBg.color}`,
-                }"
-                tabindex="-1"
-              >
-                <div
-                  class="icon iconColor"
-                  v-html="require(`~/assets/icons/download.svg?include`)"
-                ></div>
-                <span class="iconColor">Download Key</span>
-              </a>
-            </div>
             <div id="copyView" ref="copyView">
               <p class="textColor">
                 Copy and send the URL to share my Business Card
               </p>
               <button
                 id="copyURL"
+                ref="copyURL"
                 :style="{
                   backgroundColor: `${colors.buttonBg.color}`,
                 }"
+                @click="copyURL"
               >
                 <div
                   class="icon iconColor"
@@ -101,40 +84,12 @@
               </button>
             </div>
             <div id="qrView" ref="qrView" class="textColor">
-              <div id="qr"></div>
-              <h3>Scan the QR Code</h3>
-              <p>to view my Business Card on another device</p>
+              <div id="qr" ref="qr"></div>
+              <h3>{{ getFullname || 'Digital Business Card' }}</h3>
+              <p v-if="genInfo.title">{{ genInfo.title }}</p>
             </div>
           </div>
           <header>
-            <div
-              id="topActions"
-              :style="{ display: PreviewMode ? 'flex' : 'none' }"
-            >
-              <div>
-                <a id="share" @click.prevent.capture="sharingAlert()">
-                  <div
-                    class="icon topAction"
-                    v-html="require(`~/assets/icons/share.svg?include`)"
-                  ></div>
-                </a>
-                <a id="showQR" @click.prevent.capture="sharingAlert()"
-                  ><div
-                    class="icon topAction"
-                    v-html="require(`~/assets/icons/qrcode.svg?include`)"
-                  ></div>
-                </a>
-              </div>
-              <a
-                v-if="pubKeyIsValid"
-                id="showKey"
-                @click.prevent.capture="showKey()"
-                ><div
-                  class="icon topAction"
-                  v-html="require(`~/assets/icons/key.svg?include`)"
-                ></div>
-              </a>
-            </div>
             <div class="headerImgC">
               <img
                 id="cover"
@@ -188,29 +143,55 @@
               <p class="bizname">
                 {{ genInfo.biz }}
               </p>
-              <p class="bizaddr" v-if="genInfo.addr">
-                {{ genInfo.addr }}
+              <p class="bizaddr" v-if="formattedAddress">
+                {{ formattedAddress }}
               </p>
             </div>
-            <p class="sub textColor" v-if="genInfo.desc">
-              {{ genInfo.desc }}
-            </p>
-            <a
-              id="cta"
-              rel="noreferrer"
-              :href="!PreviewMode && `${username}.vcf`"
-              download
-              target="_blank"
-              :style="{ backgroundColor: `${colors.buttonBg.color}` }"
-              @click.prevent="downloadVcard"
-              aria-label="Save Contact"
-            >
-              <div
-                class="icon iconColor"
-                v-html="require(`~/assets/icons/add-user.svg?include`)"
-              ></div>
-              <p class="iconColor">Save Contact</p>
-            </a>
+            <div class="ctaRow">
+              <a
+                id="cta"
+                :class="{ iconOnlyCta: hostedView }"
+                rel="noreferrer"
+                :href="!PreviewMode && `${username}.vcf`"
+                download
+                target="_blank"
+                :style="{ backgroundColor: `${colors.buttonBg.color}` }"
+                @click.prevent="downloadVcard"
+                aria-label="Save Contact"
+              >
+                <div
+                  class="icon iconColor"
+                  v-html="require(`~/assets/icons/add-user.svg?include`)"
+                ></div>
+                <p v-if="!hostedView" class="iconColor">Save Contact</p>
+              </a>
+              <button
+                v-if="PreviewMode"
+                type="button"
+                class="ctaSideAction"
+                :style="{ backgroundColor: `${colors.buttonBg.color}` }"
+                aria-label="Share Card"
+                @click="shareEnabled ? openShareModal('copy') : sharingAlert()"
+              >
+                <div
+                  class="icon iconColor"
+                  v-html="require(`~/assets/icons/share.svg?include`)"
+                ></div>
+              </button>
+              <button
+                v-if="PreviewMode"
+                type="button"
+                class="ctaSideAction"
+                :style="{ backgroundColor: `${colors.buttonBg.color}` }"
+                aria-label="Show QR Code"
+                @click="shareEnabled ? openShareModal('qr') : sharingAlert()"
+              >
+                <div
+                  class="icon iconColor"
+                  v-html="require(`~/assets/icons/qrcode.svg?include`)"
+                ></div>
+              </button>
+            </div>
             <div class="actions">
               <div
                 class="actionsC"
@@ -344,10 +325,10 @@
             Created with
             <a
               class="textColor"
-              href="https://enbizcard.vishnuraghav.com/"
+              href="/"
               target="_blank"
               rel="noopener noreferrer"
-              >EnBizCard</a
+              >Xuno vCard Generator</a
             >
           </footer>
         </body>
@@ -362,6 +343,7 @@ import DocumentDownloader from './DocumentDownloader'
 import ProductShowcase from './ProductShowcase'
 import utils from '@/mixins/utils'
 import { mapState } from 'vuex'
+const { formatAddress } = require('../utils/address')
 
 export default {
   props: [
@@ -374,11 +356,12 @@ export default {
     'secondaryActions',
     'PreviewMode',
     'downloadVcard',
-    'downloadKey',
     'footerCredit',
     'showAlert',
     'hasLightBG',
-    'pubKeyIsValid',
+    'shareEnabled',
+    'shareUrl',
+    'hostedView',
   ],
   mixins: [utils],
   components: {
@@ -406,6 +389,9 @@ export default {
     },
     hasOnlyProfilePic() {
       return !(this.images.cover.url || this.images.logo.url)
+    },
+    formattedAddress() {
+      return formatAddress(this.genInfo)
     },
     getFeaturedMusic() {
       return this.featured.music
@@ -465,20 +451,68 @@ export default {
             e.style.visibility = 'hidden'
           }, 200))
     },
-    showKey() {
-      let modal = this.$refs.modal
-      let copyView = this.$refs.copyView
-      let qrView = this.$refs.qrView
-      this.toggleContainer(modal)
-      copyView.style.display = qrView.style.display = 'none'
-    },
     closePublicKey() {
       let modal = this.$refs.modal
       this.toggleContainer(modal)
     },
+    hideModalViews() {
+      const copyView = this.$refs.copyView
+      const qrView = this.$refs.qrView
+
+      if (copyView) copyView.style.display = 'none'
+      if (qrView) qrView.style.display = 'none'
+    },
+    renderQrCode() {
+      const qr = this.$refs.qr
+      if (!qr || !window.QRCode) {
+        return
+      }
+      qr.innerHTML = new window.QRCode({
+        content: this.shareUrl || window.location.href,
+        container: 'svg-viewbox',
+        join: true,
+        ecl: 'L',
+        padding: 0,
+      }).svg()
+    },
+    openShareModal(mode) {
+      let modal = this.$refs.modal
+      let copyView = this.$refs.copyView
+      let qrView = this.$refs.qrView
+
+      if (modal.style.top === '2rem') {
+        this.toggleContainer(modal)
+      }
+      this.hideModalViews()
+
+      if (mode === 'qr') {
+        qrView.style.display = 'block'
+        this.renderQrCode()
+      } else {
+        copyView.style.display = 'flex'
+      }
+    },
+    async copyURL() {
+      const target = this.shareUrl || window.location.href
+      const label = this.$refs.copyURL
+        ? this.$refs.copyURL.querySelectorAll('.iconColor')[1]
+        : null
+
+      try {
+        await navigator.clipboard.writeText(target)
+        if (label) {
+          label.innerText = 'Copied'
+          setTimeout(() => {
+            label.innerText = 'Copy URL'
+          }, 1000)
+        }
+      } catch (error) {
+        this.showAlert('Clipboard access is unavailable in this browser.')
+      }
+    },
     sharingAlert() {
       this.showAlert(
-        'You are able to share your business card after completing the hosting process.\n\nCheck out the <a class="underline font-extrabold text-emerald-600 hover:text-emerald-500 transition-colors duration-200" href="/demo" target="_blank">demo</a> to test the functionality.'
+        'Save the card first to generate a shareable public link.'
       )
     },
     togglePlay(ref) {
@@ -514,6 +548,25 @@ export default {
 </script>
 
 <style lang="scss">
+.hostedPreview {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: visible;
+}
+
+@media screen and (min-width: 768px) {
+  .hostedPreview {
+    width: 30rem;
+    min-height: 0;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    border: 4px solid #000;
+    border-radius: 2rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+}
+
 #Theme1 {
   // General
   body {
@@ -558,7 +611,6 @@ export default {
     cursor: pointer;
     line-height: 0;
   }
-  #keyView,
   #copyView,
   #qrView {
     display: flex;
@@ -571,8 +623,7 @@ export default {
       text-align: center;
     }
   }
-  #copyURL,
-  #dlKey {
+  #copyURL {
     display: flex;
     width: 100%;
     align-items: center;
@@ -692,6 +743,7 @@ export default {
   .bizaddr {
     font-size: 0.8rem;
     opacity: 0.6;
+    white-space: pre-line;
   }
   .sub,
   .textC {
@@ -707,15 +759,24 @@ export default {
   .textC {
     margin: 1rem;
   }
+  .ctaRow {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    width: 100%;
+  }
   #cta {
     display: flex;
     align-items: center;
     border-radius: 5rem;
-    margin-top: 2rem;
+    margin-top: 0;
     padding: 1rem 1.5rem;
     cursor: pointer;
     line-height: 0;
-    width: 100%;
+    width: auto;
+    flex: 1 1 auto;
     justify-content: center;
     box-sizing: border-box;
     .icon {
@@ -724,6 +785,28 @@ export default {
     p {
       margin: 0;
     }
+    &.iconOnlyCta {
+      flex: 0 0 auto;
+      min-width: 3.5rem;
+      padding: 1rem;
+      .icon {
+        margin-right: 0;
+      }
+    }
+  }
+  .ctaSideAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.5rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 5rem;
+    cursor: pointer;
+    line-height: 0;
+  }
+  .ctaSideAction .icon {
+    margin: 0;
   }
   .actions {
     width: 100%;
@@ -922,7 +1005,6 @@ export default {
     cursor: pointer;
     line-height: 0;
   }
-  #keyView,
   #copyView,
   #qrView {
     display: flex;
@@ -934,8 +1016,7 @@ export default {
       margin: 2rem;
     }
   }
-  #copyURL,
-  #dlKey {
+  #copyURL {
     display: flex;
     width: 100%;
     align-items: center;
@@ -1055,6 +1136,7 @@ export default {
   .bizaddr {
     font-size: 0.8rem;
     opacity: 0.6;
+    white-space: pre-line;
   }
   .sub,
   .textC {
@@ -1070,15 +1152,24 @@ export default {
   .textC {
     margin: 1rem;
   }
+  .ctaRow {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    width: 100%;
+  }
   #cta {
     display: flex;
     align-items: center;
     border-radius: 0.5rem;
-    margin-top: 2rem;
+    margin-top: 0;
     padding: 1rem 1.5rem;
     cursor: pointer;
     line-height: 0;
-    width: 100%;
+    width: auto;
+    flex: 1 1 auto;
     justify-content: center;
     box-sizing: border-box;
     .icon {
@@ -1087,6 +1178,28 @@ export default {
     p {
       margin: 0;
     }
+    &.iconOnlyCta {
+      flex: 0 0 auto;
+      min-width: 3.5rem;
+      padding: 1rem;
+      .icon {
+        margin-right: 0;
+      }
+    }
+  }
+  .ctaSideAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.5rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    line-height: 0;
+  }
+  .ctaSideAction .icon {
+    margin: 0;
   }
   .actions {
     width: 100%;
@@ -1285,7 +1398,6 @@ export default {
     cursor: pointer;
     line-height: 0;
   }
-  #keyView,
   #copyView,
   #qrView {
     display: flex;
@@ -1297,8 +1409,7 @@ export default {
       margin: 2rem;
     }
   }
-  #copyURL,
-  #dlKey {
+  #copyURL {
     display: flex;
     width: 100%;
     align-items: center;
@@ -1418,6 +1529,7 @@ export default {
   .bizaddr {
     font-size: 0.8rem;
     opacity: 0.6;
+    white-space: pre-line;
   }
   .sub,
   .textC {
@@ -1433,14 +1545,23 @@ export default {
   .textC {
     margin: 1rem;
   }
+  .ctaRow {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    width: 100%;
+  }
   #cta {
     display: flex;
     align-items: center;
     border-radius: 0.5rem;
-    margin-top: 2rem;
+    margin-top: 0;
     padding: 1rem 1.5rem;
     cursor: pointer;
     line-height: 0;
+    flex: 1 1 auto;
     justify-content: center;
     box-sizing: border-box;
     .icon {
@@ -1449,6 +1570,28 @@ export default {
     p {
       margin: 0;
     }
+    &.iconOnlyCta {
+      flex: 0 0 auto;
+      min-width: 3.5rem;
+      padding: 1rem;
+      .icon {
+        margin-right: 0;
+      }
+    }
+  }
+  .ctaSideAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.5rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    line-height: 0;
+  }
+  .ctaSideAction .icon {
+    margin: 0;
   }
   .actions {
     width: 100%;

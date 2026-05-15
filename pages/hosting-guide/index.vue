@@ -6,7 +6,7 @@
           <div
             class="logo w-24"
             v-html="require(`~/assets/icons/logo.svg?include`)"
-            title="EnBizCard - An Open-Source Digital Business Card Generator"
+            title="Xuno vCard Generator"
           ></div
         ></NuxtLink>
         <a
@@ -233,16 +233,13 @@
         >
       </div>
     </div>
-    <Footer />
   </div>
 </template>
 <script>
-import Footer from '@/components/Footer'
 import Help from '@/components/Help'
 
 export default {
   components: {
-    Footer,
     Help,
   },
 }

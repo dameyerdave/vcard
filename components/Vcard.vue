@@ -5,7 +5,7 @@ VERSION:3.0
 N:{{ getSplitName }}
 FN:{{ getFullname }}
 ORG:{{ vCard.org }}
-ADR;TYPE=WORK:{{ vCard.addr }}
+ADR;TYPE=WORK:{{ getAddress }}
 TITLE:{{ vCard.title }}
 TEL;TYPE=CELL:{{ vCard.cell }}
 TEL;TYPE=WORK:{{ vCard.work }}
@@ -15,17 +15,20 @@ EMAIL;TYPE=WORK:{{ vCard.email }}
 URL;TYPE=Digital Business Card:{{ vCard.hostedURL }}
 URL:{{ vCard.website }}
 {{ getURLs }}
-KEY;TYPE=PGP;ENCODING=b:{{ vCard.key }}
-NOTE:{{ vCard.note }}
 UID:{{ vCard.uid }}
 END:VCARD</pre
   >
 </template>
 
 <script>
+const { buildVcardAddressValue } = require('../utils/address')
+
 export default {
   props: ['vCard'],
   computed: {
+    getAddress() {
+      return buildVcardAddressValue(this.vCard.address || {})
+    },
     getURLs() {
       return this.vCard.urls
         .map((e) => `URL;TYPE=${e.title}:${e.url}`)
