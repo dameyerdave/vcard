@@ -9,6 +9,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data
+    networks:
+      enbizcard-net:
+        ipv4_address: ${ENBIZCARD_IP:-172.28.0.10}
 
   envoy:
     image: ${ENVOY_IMAGE}
@@ -20,6 +23,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    networks:
+      enbizcard-net:
+        ipv4_address: ${ENVOY_IP:-172.28.0.20}
 
   cloudflared:
     image: ${CLOUDFLARED_IMAGE}
@@ -28,3 +34,13 @@ services:
       - envoy
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     restart: unless-stopped
+    networks:
+      enbizcard-net:
+        ipv4_address: ${CLOUDFLARED_IP:-172.28.0.30}
+
+networks:
+  enbizcard-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DOCKER_NETWORK_SUBNET:-172.28.0.0/24}
