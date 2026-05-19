@@ -195,8 +195,8 @@
             <div class="actions">
               <div
                 class="actionsC"
-                v-for="(item, index) in primaryActions"
-                :key="'pa' + index"
+                v-for="(item, index) in combinedActions"
+                :key="'action' + index"
               >
                 <div class="actionBtn">
                   <a
@@ -220,25 +220,6 @@
                       item.name.substr(0, 1).toUpperCase() + item.name.slice(1)
                     }}
                   </p>
-                </div>
-              </div>
-            </div>
-            <div class="actions secondary">
-              <div
-                class="actionsC"
-                v-for="(item, index) in secondaryActions"
-                :key="'sa' + index"
-              >
-                <div class="actionBtn secBtn">
-                  <a
-                    :href="getHref(item)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    :style="{ background: item.color }"
-                    :aria-label="item.name"
-                  >
-                    <div class="icon" v-html="getSVG(item)"></div>
-                  </a>
                 </div>
               </div>
             </div>
@@ -395,6 +376,9 @@ export default {
     },
     getFeaturedMusic() {
       return this.featured.music
+    },
+    combinedActions() {
+      return [...this.primaryActions, ...this.secondaryActions]
     },
     getCssHref() {
       if (this.genInfo.fontLink) {

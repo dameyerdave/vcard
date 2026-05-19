@@ -9,6 +9,8 @@ PROXY_SERVICE := envoy
 TUNNEL_SERVICE := cloudflared
 DEV_SERVICES := $(APP_SERVICE) $(PROXY_SERVICE)
 PROD_SERVICES := $(APP_SERVICE) $(PROXY_SERVICE) $(TUNNEL_SERVICE)
+DEV_APP_ENV := development
+DEV_AUTH_USER ?= test@test.com
 
 .PHONY: help env up down stop start restart build rebuild pull ps logs logs-app logs-proxy logs-tunnel shell config clean dev-up dev-down dev-restart prod-up prod-down prod-restart
 
@@ -22,11 +24,11 @@ env: ## Create .env from env.example if it does not exist yet
 up: dev-up ## Start the local development stack
 
 dev-up: ## Build and start the local stack (app + envoy)
-	-@$(COMPOSE_CMD) rm -f -s $(TUNNEL_SERVICE)
-	@$(COMPOSE_CMD) up -d --build $(DEV_SERVICES)
+	-@APP_ENV=$(DEV_APP_ENV) DEV_AUTH_EMAIL=$(DEV_AUTH_USER) $(COMPOSE_CMD) rm -f -s $(TUNNEL_SERVICE)
+	@APP_ENV=$(DEV_APP_ENV) DEV_AUTH_EMAIL=$(DEV_AUTH_USER) $(COMPOSE_CMD) up -d --build $(DEV_SERVICES)
 
 prod-up: ## Build and start the full production stack (requires a valid Cloudflare token)
-	@$(COMPOSE_CMD) up -d --build $(PROD_SERVICES)
+	@APP_ENV=production DEV_AUTH_EMAIL= $(COMPOSE_CMD) up -d --build $(PROD_SERVICES)
 
 down: ## Stop and remove the full stack
 	@$(COMPOSE_CMD) down --remove-orphans

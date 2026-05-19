@@ -109,6 +109,7 @@
         :publishCard="publishCard"
         :publishBusy="publishBusy"
         :publishLabel="publishLabel"
+        :isEditingCard="Boolean(currentCardId)"
         :authUser="authUser"
         :userCards="userCards"
         :cardsLoading="cardsLoading"
@@ -811,6 +812,7 @@
           :publishCard="publishCard"
           :publishBusy="publishBusy"
           :publishLabel="publishLabel"
+          :isEditingCard="Boolean(currentCardId)"
           :authUser="authUser"
           :userCards="userCards"
           :cardsLoading="cardsLoading"
@@ -2246,13 +2248,14 @@ export default {
         this.showAlert(error.message)
       }
     },
-    async publishCard() {
+    async publishCard(options = {}) {
       if (!this.downloadChecked || this.publishBusy || !this.authUser) {
         return
       }
 
       this.publishBusy = true
       try {
+        const publishAsNew = Boolean(options.asNew)
         const payload = await this.serializeCardPayload()
         const result = await this.apiJson('/api/cards', {
           method: 'POST',
@@ -2260,7 +2263,7 @@ export default {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: this.currentCardId,
+            id: publishAsNew ? null : this.currentCardId,
             card: payload,
           }),
         })
@@ -2270,7 +2273,7 @@ export default {
         this.hostedURL = result.card.url
         await this.refreshUserCards()
         this.showAlert(
-          `Your card is live.<br /><br /><a class="underline font-extrabold text-emerald-600 hover:text-emerald-500 transition-colors duration-200" href="${this.hostedURL}" target="_blank" rel="noreferrer">Open the hosted card</a>`
+          `Your${publishAsNew ? ' new' : ''} card is live.<br /><br /><a class="underline font-extrabold text-emerald-600 hover:text-emerald-500 transition-colors duration-200" href="${this.hostedURL}" target="_blank" rel="noreferrer">Open the hosted card</a>`
         )
       } catch (error) {
         this.showAlert(error.message)

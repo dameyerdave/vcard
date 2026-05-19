@@ -5,6 +5,19 @@ function fallbackName(email) {
   return email.split('@')[0]
 }
 
+function isDevelopmentMode() {
+  const appEnv = (process.env.APP_ENV || process.env.NODE_ENV || '').toLowerCase()
+  return appEnv === 'development' || appEnv === 'dev'
+}
+
+function getDevelopmentEmail() {
+  if (!isDevelopmentMode()) {
+    return null
+  }
+
+  return process.env.DEV_AUTH_EMAIL || 'test@test.com'
+}
+
 function getUserFromHeaders(req) {
   const headers = req.headers || {}
   const emailHeaderName =
@@ -18,7 +31,7 @@ function getUserFromHeaders(req) {
     headers[emailHeaderName] ||
     headers['x-auth-request-email'] ||
     headers['x-forwarded-email'] ||
-    process.env.DEV_AUTH_EMAIL ||
+    getDevelopmentEmail() ||
     null
 
   if (!email) {

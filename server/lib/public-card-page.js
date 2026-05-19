@@ -179,27 +179,6 @@ function renderPrimaryAction(item, colors) {
   `
 }
 
-function renderSecondaryAction(item) {
-  const href = getActionHref(item)
-  if (!href) {
-    return ''
-  }
-
-  return `
-    <div class="actionsC">
-      <div class="actionBtn secBtn">
-        <a
-          href="${escapeAttr(href)}"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="${escapeAttr(item.name || 'Action')}"
-          style="background:${escapeAttr(item.color || '#374151')}"
-        ><div class="icon">${readIcon(item.icon)}</div></a>
-      </div>
-    </div>
-  `
-}
-
 function renderDocumentItem(item, colors) {
   const downloadName = `${sanitizeFilename(item.title || 'document', 'document')}.pdf`
   return `
@@ -407,6 +386,7 @@ function renderPublicCardPage({
   const secondaryActions = Array.isArray(data.secondaryActions)
     ? data.secondaryActions
     : []
+  const combinedActions = [...primaryActions, ...secondaryActions]
   const featured = Array.isArray(data.featured) ? data.featured : []
   const fullName =
     [genInfo.fname, genInfo.lname].filter(Boolean).join(' ') || 'Digital Business Card'
@@ -422,11 +402,8 @@ function renderPublicCardPage({
       ? '3rem 0 6rem'
       : '3rem 0 8rem'
     : '3rem 0'
-  const primaryActionMarkup = primaryActions
+  const primaryActionMarkup = combinedActions
     .map((item) => renderPrimaryAction(item, colors))
-    .join('')
-  const secondaryActionMarkup = secondaryActions
-    .map((item) => renderSecondaryAction(item))
     .join('')
   const featuredMarkup = featured
     .map((section) => renderFeaturedSection(section, colors))
@@ -580,11 +557,6 @@ function renderPublicCardPage({
         </div>
 
         ${primaryActionMarkup ? `<div class="actions">${primaryActionMarkup}</div>` : ''}
-        ${
-          secondaryActionMarkup
-            ? `<div class="actions secondary">${secondaryActionMarkup}</div>`
-            : ''
-        }
         ${featuredMarkup}
       </main>
     </div>

@@ -124,19 +124,42 @@
     </section>
 
     <div v-if="showPublishSection" class="stepC" :class="showCardsSection ? 'mt-10' : ''">
-      <button
-        ref="publishCardButton"
-        @click="publishCard"
-        class="inline-block leading-none text-2xl tracking-wide border-2 border-transparent font-extrabold p-6 rounded select-none transition-colors duration-200 focus:outline-none"
-        :title="buttonTitle"
-        :class="
-          canPublish
-            ? 'bg-emerald-600 cursor-pointer text-white focus:bg-emerald-500 hover:bg-emerald-500'
-            : 'bg-gray-700 cursor-not-allowed text-black'
-        "
+      <div
+        v-if="isEditingCard"
+        class="mb-4 rounded-2xl border border-gray-800 bg-black px-4 py-4 text-sm text-gray-300"
       >
-        {{ publishBusy ? 'Saving…' : publishLabel }}
-      </button>
+        You are editing an existing live card. Save changes to update it, or
+        save the current draft as a separate card.
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <button
+          ref="publishCardButton"
+          @click="publishCard"
+          class="inline-block leading-none text-2xl tracking-wide border-2 border-transparent font-extrabold p-6 rounded select-none transition-colors duration-200 focus:outline-none"
+          :title="buttonTitle"
+          :class="
+            canPublish
+              ? 'bg-emerald-600 cursor-pointer text-white focus:bg-emerald-500 hover:bg-emerald-500'
+              : 'bg-gray-700 cursor-not-allowed text-black'
+          "
+        >
+          {{ publishBusy ? 'Saving…' : publishLabel }}
+        </button>
+        <button
+          v-if="isEditingCard"
+          type="button"
+          @click="publishCard({ asNew: true })"
+          class="inline-flex items-center justify-center rounded border border-gray-700 px-5 py-4 text-sm font-extrabold uppercase tracking-widest transition-colors duration-200 focus:outline-none"
+          :title="buttonTitle"
+          :class="
+            canPublish
+              ? 'bg-gray-800 text-white hover:bg-gray-700 focus:bg-gray-700'
+              : 'cursor-not-allowed bg-gray-700 text-black'
+          "
+        >
+          {{ publishBusy ? 'Saving…' : 'Save as new card' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -154,6 +177,7 @@ export default {
     'loadCard',
     'deleteCard',
     'mode',
+    'isEditingCard',
   ],
   computed: {
     canPublish() {

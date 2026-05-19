@@ -8,7 +8,7 @@ function unauthorized(res) {
   json(res, 401, {
     error: 'Authentication required',
     detail:
-      'No authenticated user email was found in the request headers. Protect the editor/API with Cloudflare Access or set DEV_AUTH_EMAIL for local development.',
+      'No authenticated user email was found in the request headers. Protect the editor/API with Cloudflare Access. Local development can use APP_ENV=development with DEV_AUTH_EMAIL or the default test@test.com fallback.',
   })
 }
 

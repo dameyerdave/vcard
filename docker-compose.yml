@@ -4,6 +4,9 @@ services:
     container_name: enbizcard
     env_file:
       - .env
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DEV_AUTH_EMAIL: ${DEV_AUTH_EMAIL:-}
     expose:
       - "80"
     restart: unless-stopped
