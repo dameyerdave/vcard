@@ -71,100 +71,16 @@ export default {
         href: '/apple-touch-icon.png',
       },
       {
+        rel: 'manifest',
+        href: '/manifest.webmanifest',
+      },
+      {
         rel: 'mask-icon',
         color: '#111827',
         href: '/safari-pinned-tab.svg',
       },
     ],
     script: [{ src: '/qrcode.min.js' }],
-  },
-  manifest: {
-    name: 'xuno vcard generator',
-    short_name: 'xuno vcard',
-    start_url: '/',
-    display: 'standalone',
-    theme_color: '#111827',
-    background_color: '#111827',
-    display: 'standalone',
-    icons: [
-      {
-        src: '/icon_64.png',
-        sizes: '64x64',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_64.png',
-        sizes: '64x64',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icon_120.png',
-        sizes: '120x120',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_120.png',
-        sizes: '120x120',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icon_144.png',
-        sizes: '144x144',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_144.png',
-        sizes: '144x144',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icon_152.png',
-        sizes: '152x152',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_152.png',
-        sizes: '152x152',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icon_192.png',
-        sizes: '192x192',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_192.png',
-        sizes: '192x192',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icon_384.png',
-        sizes: '384x384',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_384.png',
-        sizes: '384x384',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icon_512.png',
-        sizes: '512x512',
-        type: 'image/png',
-      },
-      {
-        src: '/maskable_512.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-    ],
   },
   loading: false,
   /*
@@ -192,38 +108,71 @@ export default {
    */
   components: true,
   /*
-   ** Nuxt.js dev-modules
-   */
-  buildModules: [
-    // Doc: https://github.com/nuxt-community/nuxt-tailwindcss
-    '@nuxtjs/tailwindcss',
-    '@aceforth/nuxt-optimized-images',
-  ],
-  optimizedImages: {
-    inlineImageLimit: 1000,
-    imagesName: ({ isDev }) =>
-      isDev
-        ? '[path][name][hash:optimized].[ext]'
-        : 'img/[contenthash:7].[ext]',
-    responsiveImagesName: ({ isDev }) =>
-      isDev
-        ? '[path][name]--[width][hash:optimized].[ext]'
-        : 'img/[contenthash:7]-[width].[ext]',
-    handleImages: ['jpeg', 'png', 'svg', 'webp', 'gif'],
-    optimizeImages: false,
-    optimizeImagesInDev: false,
-    defaultImageLoader: 'img-loader',
-  },
-  /*
    ** Nuxt.js modules
    */
-  modules: [['@nuxtjs/pwa', { icon: false }]],
+  modules: ['@nuxtjs/tailwindcss'],
   /*
    ** Build configuration
    ** See https://nuxtjs.org/api/configuration-build/
    */
   build: {
     extend(config) {
+      const includeQuery = /include/
+      const svgPattern = /\.svg$/i
+      const excludeSvgFromDefaultRules = (rule) => {
+        if (Array.isArray(rule.oneOf)) {
+          rule.oneOf.forEach(excludeSvgFromDefaultRules)
+          return
+        }
+
+        if (!(rule.test instanceof RegExp) || !rule.test.test('.svg')) {
+          return
+        }
+
+        if (!rule.exclude) {
+          rule.exclude = [svgPattern]
+          return
+        }
+
+        if (Array.isArray(rule.exclude)) {
+          rule.exclude.push(svgPattern)
+          return
+        }
+
+        rule.exclude = [rule.exclude, svgPattern]
+      }
+
+      config.module.rules.forEach(excludeSvgFromDefaultRules)
+
+      config.module.rules.unshift({
+        test: svgPattern,
+        oneOf: [
+          {
+            resourceQuery: includeQuery,
+            use: [
+              {
+                loader: 'raw-loader',
+                options: {
+                  esModule: false,
+                },
+              },
+            ],
+          },
+          {
+            use: [
+              {
+                loader: 'url-loader',
+                options: {
+                  esModule: false,
+                  limit: 1000,
+                  name: 'img/[name].[contenthash:7].[ext]',
+                },
+              },
+            ],
+          },
+        ],
+      })
+
       config.module.rules.push({
         test: /\.min.css|\.min.js$/,
         use: [

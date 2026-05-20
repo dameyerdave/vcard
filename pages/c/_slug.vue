@@ -52,11 +52,11 @@
 </template>
 
 <script>
-import { saveAs } from 'file-saver'
 import { mapActions } from 'vuex'
 import Modal from '@/components/Modal'
 import Preview from '@/components/Preview'
 import Vcard from '@/components/Vcard'
+import { downloadBlob } from '@/utils/download'
 const { normalizeGenInfoAddress } = require('../../utils/address')
 
 export default {
@@ -309,7 +309,7 @@ export default {
       const blob = new Blob([this.$refs.vCard.$refs.vCard.innerText], {
         type: 'text/plain',
       })
-      saveAs(window.URL.createObjectURL(blob), `${this.username}.vcf`)
+      downloadBlob(blob, `${this.username}.vcf`)
     },
   },
   mounted() {

@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { saveAs } from 'file-saver'
+import { downloadBlob, downloadDataUrl } from '@/utils/download'
 export default {
   props: ['media', 'type', 'colors', 'PreviewMode'],
   methods: {
@@ -48,15 +48,12 @@ export default {
     },
     downloadDocument() {
       if (this.media.file) {
-        saveAs(
-          window.URL.createObjectURL(this.media.file),
-          `${this.media.title}.pdf`
-        )
+        downloadBlob(this.media.file, `${this.media.title}.pdf`)
         return
       }
 
       if (this.media.dataURI) {
-        saveAs(this.media.dataURI, `${this.media.title}.pdf`)
+        downloadDataUrl(this.media.dataURI, `${this.media.title}.pdf`)
       }
     },
   },

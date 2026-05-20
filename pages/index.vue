@@ -975,10 +975,7 @@
             lg:mx-12
           "
         >
-          <div id="device" class="sm:mt-10">
-            <h2 class="text-center py-4 font-extrabold text-gray-200">
-              LIVE PREVIEW
-            </h2>
+          <div id="device">
             <Preview
               ref="html"
               :username="username"
@@ -1018,7 +1015,6 @@ import Cropper from '@/components/Cropper'
 import Vcard from '@/components/Vcard'
 import draggable from 'vuedraggable'
 
-import { saveAs } from 'file-saver'
 import { mapState, mapActions } from 'vuex'
 import {
   BATCH_IMPORT_LIMIT,
@@ -1027,6 +1023,7 @@ import {
   normalizeBatchHeader,
   parseBatchWorkbook,
 } from '@/utils/batch-import'
+import { downloadBlob } from '@/utils/download'
 const { normalizeGenInfoAddress } = require('../utils/address')
 
 export default {
@@ -1959,7 +1956,7 @@ export default {
     },
     async downloadBatchTemplate() {
       const workbook = await createBatchTemplateWorkbook(this.batchImportColumns)
-      saveAs(workbook, 'vcard-batch-template.xlsx')
+      downloadBlob(workbook, 'vcard-batch-template.xlsx')
     },
     normalizeImportedBatchRows(rawRows) {
       if (!Array.isArray(rawRows) || !rawRows.length) {
@@ -2111,7 +2108,7 @@ export default {
       let blob = new Blob([this.$refs.vCard.$refs.vCard.innerText], {
         type: 'text/plain',
       })
-      saveAs(window.URL.createObjectURL(blob), `${this.username}.vcf`)
+      downloadBlob(blob, `${this.username}.vcf`)
     },
     async resizeImage(type, mime, index1, index2) {
       let vm = this

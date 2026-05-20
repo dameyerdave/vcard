@@ -249,8 +249,8 @@
 </template>
 
 <script>
-import { convertFileToBuffer } from 'id3-parser/lib/universal/helpers'
-import { parse } from 'id3-parser'
+import parse from 'id3-parser'
+import { convertFileToBuffer } from 'id3-parser/lib/util'
 const pdfjs = require('~/assets/scripts/pdfjs-dist')
 const pdfjsWorker = require('~/assets/scripts/pdfjs-dist/build/pdf.worker.entry')
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker
