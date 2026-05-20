@@ -4,6 +4,8 @@ const { getDraftByOwner, saveDraft } = require('./lib/drafts')
 const { getBaseUrl, getRequestUrl, json, notFound, readJsonBody, text } = require('./lib/http')
 const { buildVcardText } = require('./lib/vcard')
 
+const BATCH_CARD_LIMIT = 200
+
 function unauthorized(res) {
   json(res, 401, {
     error: 'Authentication required',
@@ -151,6 +153,49 @@ module.exports = async function api(req, res, next) {
           url: `${getBaseUrl(req)}/vcard/${saved.summary.slug}`,
         },
       })
+      return
+    }
+
+    if (req.method === 'POST' && pathname === '/api/cards/batch') {
+      const user = requireUser(req, res)
+      if (!user) {
+        return
+      }
+
+      const body = await readJsonBody(req)
+      const cards = Array.isArray(body.cards) ? body.cards : []
+
+      if (!cards.length) {
+        const error = new Error('No cards were provided for batch creation.')
+        error.statusCode = 400
+        throw error
+      }
+
+      if (cards.length > BATCH_CARD_LIMIT) {
+        const error = new Error(
+          `Batch creation is limited to ${BATCH_CARD_LIMIT} cards per request.`
+        )
+        error.statusCode = 400
+        throw error
+      }
+
+      const savedCards = []
+      for (const card of cards) {
+        const payload = sanitizePayload(card || {})
+        const saved = await saveCard({
+          id: null,
+          ownerEmail: user.email,
+          ownerName: user.name,
+          payload,
+        })
+
+        savedCards.push({
+          ...saved.summary,
+          url: `${getBaseUrl(req)}/vcard/${saved.summary.slug}`,
+        })
+      }
+
+      json(res, 200, { cards: savedCards })
       return
     }
 

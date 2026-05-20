@@ -145,6 +145,145 @@
             </p>
           </div>
         </div>
+        <div id="step-batch" class="mt-16">
+          <h2 class="font-extrabold text-2xl">Batch import</h2>
+          <div class="stepC">
+            <p class="text-gray-300">
+              Create multiple live vcards from one Excel file. Download the
+              template, fill one row per person, then upload it here.
+            </p>
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <button
+                class="rounded bg-gray-700 px-5 py-3 font-extrabold transition-colors duration-200 hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
+                @click="downloadBatchTemplate()"
+              >
+                Download Excel template
+              </button>
+              <button
+                class="rounded bg-gray-700 px-5 py-3 font-extrabold transition-colors duration-200 hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
+                @click="openBatchImportPicker()"
+              >
+                Upload Excel file
+              </button>
+              <input
+                ref="batchImportInput"
+                type="file"
+                accept=".xlsx"
+                v-show="false"
+                @change="handleBatchFileChange"
+                @click="$event.target.files = null"
+              />
+              <button
+                v-if="batchImportFileName || batchImportRows.length"
+                class="rounded border border-gray-700 px-5 py-3 font-extrabold transition-colors duration-200 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none"
+                @click="clearBatchImport()"
+              >
+                Clear import
+              </button>
+            </div>
+            <p class="mt-6 rounded border border-gray-700 p-4 text-gray-400">
+              The spreadsheet controls contact details and action values for
+              each imported card. Logo and cover are shared from the header
+              attachments above. Profile photos are ignored in batch mode.
+              Theme, colours, fonts, and featured content are also shared
+              across every imported card.
+            </p>
+            <div
+              v-if="batchImportRows.length"
+              class="mt-6 overflow-hidden rounded-2xl border border-gray-800 bg-black"
+            >
+              <div
+                class="flex flex-col gap-3 border-b border-gray-800 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6"
+              >
+                <div>
+                  <h3 class="font-extrabold text-xl">Imported rows</h3>
+                  <p class="mt-1 text-sm text-gray-400">
+                    {{ batchImportRows.length }} cards ready from
+                    {{ batchImportFileName }}
+                  </p>
+                </div>
+                <p class="text-sm text-gray-400">
+                  Max {{ batchImportLimit }} cards per import
+                </p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left" style="min-width: 760px">
+                  <thead class="bg-gray-900 text-xs uppercase tracking-widest text-gray-500">
+                    <tr>
+                      <th class="px-4 py-3 font-extrabold sm:px-6">Row</th>
+                      <th class="px-4 py-3 font-extrabold">Name</th>
+                      <th class="px-4 py-3 font-extrabold">Title</th>
+                      <th class="px-4 py-3 font-extrabold">Business</th>
+                      <th class="px-4 py-3 font-extrabold">Email</th>
+                      <th class="px-4 py-3 font-extrabold text-right sm:px-6">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="row in batchImportPreviewRows"
+                      :key="`batch-row-${row.rowNumber}`"
+                      class="border-t border-gray-800 align-top"
+                    >
+                      <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400 sm:px-6">
+                        {{ row.rowNumber }}
+                      </td>
+                      <td class="px-4 py-4 font-extrabold">
+                        {{ row.displayName || 'Untitled card' }}
+                      </td>
+                      <td class="px-4 py-4 text-gray-300">
+                        {{ row.genInfo.title || '—' }}
+                      </td>
+                      <td class="px-4 py-4 text-gray-300">
+                        {{ row.genInfo.biz || '—' }}
+                      </td>
+                      <td class="px-4 py-4 text-gray-300">
+                        {{ row.email || '—' }}
+                      </td>
+                      <td class="whitespace-nowrap px-4 py-4 text-right text-sm text-gray-400 sm:px-6">
+                        {{ row.actionCount }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div
+                class="flex flex-col gap-4 border-t border-gray-800 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+              >
+                <p class="text-sm text-gray-400">
+                  <span v-if="batchImportRows.length > batchImportPreviewRows.length">
+                    Showing {{ batchImportPreviewRows.length }} of
+                    {{ batchImportRows.length }} imported rows.
+                  </span>
+                  <span v-else>
+                    Each imported row will be created as a separate live card.
+                  </span>
+                </p>
+                <button
+                  class="inline-flex items-center justify-center rounded bg-emerald-600 px-5 py-3 text-sm font-extrabold uppercase tracking-widest text-white transition-colors duration-200 focus:outline-none"
+                  :class="
+                    batchImportBusy || !authUser
+                      ? 'cursor-not-allowed bg-gray-700 text-black'
+                      : 'hover:bg-emerald-500 focus:bg-emerald-500'
+                  "
+                  :title="
+                    authUser
+                      ? ''
+                      : 'Cloudflare authentication is required before creating cards'
+                  "
+                  @click="publishBatchCards()"
+                >
+                  {{
+                    batchImportBusy
+                      ? 'Creating…'
+                      : `Create ${batchImportRows.length} cards`
+                  }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="step-2" class="mt-16">
           <h2 class="font-extrabold text-2xl">Contact information</h2>
           <Attachment
@@ -881,6 +1020,13 @@ import draggable from 'vuedraggable'
 
 import { saveAs } from 'file-saver'
 import { mapState, mapActions } from 'vuex'
+import {
+  BATCH_IMPORT_LIMIT,
+  buildBatchImportColumns,
+  createBatchTemplateWorkbook,
+  normalizeBatchHeader,
+  parseBatchWorkbook,
+} from '@/utils/batch-import'
 const { normalizeGenInfoAddress } = require('../utils/address')
 
 export default {
@@ -1528,12 +1674,7 @@ export default {
           },
         ],
       },
-      featured: [
-        {
-          title: 'Section title',
-          content: [],
-        },
-      ],
+      featured: [],
       hostedURL: null,
       footerCredit: false,
       PreviewMode: true,
@@ -1543,6 +1684,9 @@ export default {
       scrollPos: null,
       opening: false,
       publishBusy: false,
+      batchImportBusy: false,
+      batchImportFileName: null,
+      batchImportRows: [],
       cardsLoading: false,
       authUser: null,
       userCards: [],
@@ -1660,6 +1804,15 @@ export default {
         e.name.toLowerCase().includes(this.filterSecondary.toLowerCase())
       )
     },
+    batchImportLimit() {
+      return BATCH_IMPORT_LIMIT
+    },
+    batchImportColumns() {
+      return buildBatchImportColumns(this.actionCatalog || this.actions)
+    },
+    batchImportPreviewRows() {
+      return this.batchImportRows.slice(0, 8)
+    },
     vCard() {
       const getNumber = (type) => {
         let no = this.primaryActions
@@ -1742,11 +1895,182 @@ export default {
     getTitle(e) {
       return e.toLowerCase().split(' ').join('_')
     },
-    addFeature() {
-      this.featured.push({
-        title: 'Section title',
+    createEmptyFeaturedSection() {
+      return {
+        title: '',
         content: [],
-      })
+      }
+    },
+    normalizeFeaturedSections(sections) {
+      if (!Array.isArray(sections)) {
+        return []
+      }
+
+      return sections
+        .filter((section) => {
+          if (!section) {
+            return false
+          }
+
+          const title =
+            typeof section.title === 'string' ? section.title.trim() : ''
+          const content = Array.isArray(section.content) ? section.content : []
+
+          // Hide the legacy auto-created placeholder section from older drafts.
+          return !(title === 'Section title' && content.length === 0)
+        })
+        .map((section) => {
+          return {
+            title: section.title || '',
+            content: (section.content || []).map((item) =>
+              this.normalizeFeaturedItem(item)
+            ),
+          }
+        })
+    },
+    createEmptyBatchRowGenInfo() {
+      return {
+        fname: null,
+        lname: null,
+        pronouns: null,
+        title: null,
+        biz: null,
+        street: null,
+        streetNo: null,
+        zip: null,
+        city: null,
+        country: null,
+      }
+    },
+    getBatchActionCatalog(actionGroup) {
+      if (this.actionCatalog && Array.isArray(this.actionCatalog[actionGroup])) {
+        return this.actionCatalog[actionGroup]
+      }
+      return Array.isArray(this.actions[actionGroup]) ? this.actions[actionGroup] : []
+    },
+    openBatchImportPicker() {
+      if (this.$refs.batchImportInput) {
+        this.$refs.batchImportInput.click()
+      }
+    },
+    clearBatchImport() {
+      this.batchImportFileName = null
+      this.batchImportRows = []
+    },
+    async downloadBatchTemplate() {
+      const workbook = await createBatchTemplateWorkbook(this.batchImportColumns)
+      saveAs(workbook, 'vcard-batch-template.xlsx')
+    },
+    normalizeImportedBatchRows(rawRows) {
+      if (!Array.isArray(rawRows) || !rawRows.length) {
+        throw new Error('No card rows were found in the Excel file.')
+      }
+
+      const columnsByHeader = new Map(
+        this.batchImportColumns.map((column) => [
+          normalizeBatchHeader(column.header),
+          column,
+        ])
+      )
+      const recognizedHeaders = new Set()
+
+      const rows = rawRows
+        .map((rawRow, index) => {
+          const genInfo = this.createEmptyBatchRowGenInfo()
+          const actionValues = {}
+          let hasRecognizedValue = false
+
+          Object.entries(rawRow || {}).forEach(([rawHeader, rawValue]) => {
+            const column = columnsByHeader.get(normalizeBatchHeader(rawHeader))
+
+            if (!column) {
+              return
+            }
+
+            recognizedHeaders.add(column.header)
+
+            const value =
+              rawValue === null || rawValue === undefined
+                ? ''
+                : String(rawValue).trim()
+
+            if (!value) {
+              return
+            }
+
+            hasRecognizedValue = true
+
+            if (column.fieldType === 'genInfo') {
+              genInfo[column.key] = value
+              return
+            }
+
+            actionValues[column.header] = value
+          })
+
+          if (!hasRecognizedValue) {
+            return null
+          }
+
+          const displayName = [genInfo.fname, genInfo.lname]
+            .filter(Boolean)
+            .join(' ')
+          const email = actionValues.email || null
+
+          return {
+            rowNumber: index + 2,
+            genInfo,
+            actionValues,
+            displayName: displayName || null,
+            email,
+            actionCount: Object.keys(actionValues).length,
+          }
+        })
+        .filter(Boolean)
+
+      if (!recognizedHeaders.size) {
+        throw new Error(
+          'The Excel file does not contain any supported batch template headers.'
+        )
+      }
+
+      if (!rows.length) {
+        throw new Error('No card rows were found in the Excel file.')
+      }
+
+      if (rows.length > BATCH_IMPORT_LIMIT) {
+        throw new Error(
+          `The batch import is limited to ${BATCH_IMPORT_LIMIT} cards per file.`
+        )
+      }
+
+      return rows
+    },
+    async handleBatchFileChange(event) {
+      const file =
+        event && event.target && event.target.files && event.target.files.length
+          ? event.target.files[0]
+          : null
+
+      if (!file) {
+        return
+      }
+
+      try {
+        const rows = await parseBatchWorkbook(file)
+        const normalizedRows = this.normalizeImportedBatchRows(rows)
+        this.batchImportFileName = file.name
+        this.batchImportRows = normalizedRows
+        this.showAlert(
+          `Imported ${normalizedRows.length} card rows from ${file.name}.`
+        )
+      } catch (error) {
+        this.clearBatchImport()
+        this.showAlert(error.message || 'The Excel file could not be imported.')
+      }
+    },
+    addFeature() {
+      this.featured.push(this.createEmptyFeaturedSection())
     },
     hasLightBG(e) {
       let hex = this.colors[e].color
@@ -1939,7 +2263,7 @@ export default {
       return await Promise.all(
         this.featured.map(async (section) => {
           return {
-            title: section.title || 'Section title',
+            title: section.title || null,
             content: await Promise.all(
               (section.content || []).map(async (item) => {
                 if (!item || typeof item === 'string') {
@@ -1988,6 +2312,74 @@ export default {
           }
         })
       )
+    },
+    async buildBatchBasePayload() {
+      return {
+        theme: this.theme,
+        footerCredit: false,
+        colors: this.cloneDeep(this.colors),
+        genInfo: {
+          fname: null,
+          lname: null,
+          pronouns: null,
+          title: null,
+          biz: null,
+          addr: null,
+          street: null,
+          streetNo: null,
+          city: null,
+          zip: null,
+          country: null,
+          desc: null,
+          key: null,
+          tracker: this.genInfo.tracker || null,
+          fontLink: this.genInfo.fontLink || null,
+          fontCss: this.genInfo.fontCss || null,
+        },
+        images: {
+          logo: {
+            url: this.images.logo.url,
+            ext: this.images.logo.ext,
+            mime: this.images.logo.mime,
+          },
+          photo: {
+            url: null,
+            ext: null,
+            mime: null,
+          },
+          cover: {
+            url: this.images.cover.url,
+            ext: this.images.cover.ext,
+            mime: this.images.cover.mime,
+          },
+        },
+        primaryActions: [],
+        secondaryActions: [],
+        featured: await this.serializeFeatured(),
+      }
+    },
+    buildBatchActionsFromRow(row, actionGroup) {
+      return this.getBatchActionCatalog(actionGroup)
+        .filter((action) => row.actionValues[normalizeBatchHeader(action.name)])
+        .map((action) => ({
+          ...this.cloneDeep(action),
+          value: row.actionValues[normalizeBatchHeader(action.name)],
+        }))
+    },
+    buildBatchPayloadFromRow(basePayload, row) {
+      return {
+        theme: basePayload.theme,
+        footerCredit: basePayload.footerCredit,
+        colors: this.cloneDeep(basePayload.colors),
+        genInfo: normalizeGenInfoAddress({
+          ...this.cloneDeep(basePayload.genInfo),
+          ...row.genInfo,
+        }),
+        images: this.cloneDeep(basePayload.images),
+        primaryActions: this.buildBatchActionsFromRow(row, 'primaryActions'),
+        secondaryActions: this.buildBatchActionsFromRow(row, 'secondaryActions'),
+        featured: this.cloneDeep(basePayload.featured),
+      }
     },
     async serializeCardPayload() {
       const genInfo = this.cloneDeep(this.genInfo)
@@ -2140,6 +2532,44 @@ export default {
     async copyCardLink(card) {
       await this.copyText(card.url || this.getCardURL(card.slug))
     },
+    async publishBatchCards() {
+      if (
+        this.publishBusy ||
+        this.batchImportBusy ||
+        !this.authUser ||
+        !this.batchImportRows.length
+      ) {
+        return
+      }
+
+      this.batchImportBusy = true
+      try {
+        const basePayload = await this.buildBatchBasePayload()
+        const cards = this.batchImportRows.map((row) =>
+          this.buildBatchPayloadFromRow(basePayload, row)
+        )
+
+        const result = await this.apiJson('/api/cards/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cards }),
+        })
+
+        await this.refreshUserCards()
+        const createdCards = Array.isArray(result.cards) ? result.cards : []
+        const firstCard = createdCards[0]
+        this.clearBatchImport()
+        this.showAlert(
+          `Created ${createdCards.length} live cards.${firstCard ? `<br /><br /><a class="underline font-extrabold text-emerald-600 hover:text-emerald-500 transition-colors duration-200" href="${firstCard.url}" target="_blank" rel="noreferrer">Open the first hosted card</a>` : ''}`
+        )
+      } catch (error) {
+        this.showAlert(error.message)
+      } finally {
+        this.batchImportBusy = false
+      }
+    },
     applyEditorState(data, options = {}) {
       const baseDraft = this.cloneDeep(this.defaultDraft)
       const baseDownloadCheckList = this.cloneDeep(
@@ -2176,17 +2606,7 @@ export default {
       })
       this.primaryActions = this.cloneDeep(data.primaryActions || [])
       this.secondaryActions = this.cloneDeep(data.secondaryActions || [])
-      this.featured =
-        data.featured && data.featured.length
-          ? data.featured.map((section) => {
-              return {
-                title: section.title || 'Section title',
-                content: (section.content || []).map((item) =>
-                  this.normalizeFeaturedItem(item)
-                ),
-              }
-            })
-          : this.cloneDeep(baseDraft.featured)
+      this.featured = this.normalizeFeaturedSections(data.featured)
       this.footerCredit = false
       this.downloadCheckList =
         options.downloadCheckList && options.downloadCheckList.length

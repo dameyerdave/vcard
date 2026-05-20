@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "HOST=0.0.0.0 PORT=2221 nuxt",
+    "update-browserslist-db": "npx update-browserslist-db@latest",
+    "prebuild": "npm run update-browserslist-db",
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate"
